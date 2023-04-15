@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Card App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Add .app-container div to wrap .grid-container and .control-container -->
+    <div class="app-container">
+        <div class="grid-labels">
+            <!-- Grid cells will be generated dynamically -->
+        </div>
+      <div class="grid-container">
+          <!-- Grid cells will be generated dynamically -->
+      </div>
+      <div class="control-container">
+        <button id="save-to-file">Save</button>
+        <button id="load-from-file">Load</button>
+        <input type="file" id="load-file-input" style="display:none;">
+          <button id="add-row">Add Course</button>
+          <div class="rows-container">
+          </div>
+      </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
