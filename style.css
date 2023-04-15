@@ -37,7 +37,6 @@
   align-items: center;
   justify-content: center;
   border: none;
-  background-color: #f0f0f0; /* Add a background color to the grid cells for better contrast */
 }
 
 .control-btn {
