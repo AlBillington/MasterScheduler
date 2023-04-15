@@ -149,7 +149,7 @@ function shiftCardsToLeft() {
 
   // Add this function to script.js to update the card count
   function updateCardCount(inputId) {
-    console.log(inputId)
+
     const rowId = $(`#${inputId}`).parent().data('row-id');
     const cardCount = $('.card').filter(function() {
       return $(this).data('row-id') === rowId;
@@ -182,7 +182,6 @@ function shiftCardsToLeft() {
     const rowId = $(this).attr('data-row-id');
     const countElement = $(`.card-count[data-count-for="input-${rowId}"]`);
     const currentCount = parseInt(countElement.text());
-    console.log(rowId)
     // Update the count
     countElement.text(currentCount - 1);
   
@@ -249,13 +248,18 @@ $('#save-to-file').on('click', function() {
   }).toArray();
 
   const cardsData = $('.card').map(function() {
-    const cardId = $(this).attr('data-card-id');
-    const rowId = $(this).attr('data-row-id');
-    const cardText = $(this).text();
-    const position = $(this).parent().index();
-    return { cardId, rowId, cardText, position };
+    const card = $(this);
+    const cardId = card.attr('data-card-id');
+    const rowId = card.attr('data-row-id');
+    const cardText = card.text();
+  
+    // Get the absolute position of the cell
+    const cell = card.parent();
+    const cellPosition = parseInt(cell.attr('data-cell-id'));
+  
+    return { cardId, rowId, cardText, cellPosition };
   }).toArray();
-
+  
   const labelCellData = $('.teacher-label-cell, .control-label-cell').map(function() {
     const cellId = $(this).attr('teacher-data-cell-id');
     const cellValue = $(this).val();
@@ -327,13 +331,19 @@ $('#load-file-input').on('change', function(event) {
               ${cardData.cardText}
             </div>
           `);
-          $('.grid-cell').eq(cardData.position - 1).append(newCard);
 
-          // Update card count
-          const countElement = $(`.card-count[data-count-for-input="input-${cardData.rowId}"]`);
-          const currentCount = parseInt(countElement.text());
-          countElement.text(currentCount + 1);
+          // Use cellPosition property to append the card to the correct grid cell
+          $('.grid-cell[data-cell-id="' + cardData.cellPosition + '"]').append(newCard);
+
+          // Update control side counts
+          $('.row[data-row-id="' + cardData.rowId + '"] .count').text(function() {
+            const currentCount = parseInt($(this).text());
+            return currentCount + 1;
+          });
         }
+
+
+
         makeCardsDraggable()
         initializeDroppableGridCells()
       } catch (error) {
