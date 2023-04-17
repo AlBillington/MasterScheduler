@@ -47,43 +47,66 @@ $(document).ready(function() {
       });
     }
 
-  // Add this code to script.js, below the existing code
-
-// Add a new row to the control
-function addNewRow() {
-    const rowIndex = $('.row').length;
-    const newRowId = Date.now();
-    const newRowColor = randomPastelColor(rowIndex);
-    const newRow = `
-      <div class="row" data-row-id="${newRowId}" data-row-color="${newRowColor}">
-        <input type="text" id="input-${newRowId}" placeholder="Enter Name..." style="background-color: ${newRowColor};"> <!-- Add the background-color style here -->
-        <button class="add-card" data-input-id="input-${newRowId}">Add Section</button>
-        <span class="card-count" data-count-for="input-${newRowId}">0</span>
-      </div>`;
+  $('body').on('input', '.color-picker', function() {
+    const rowId = $(this).data('row-id');
+    const newRowColor = $(this).val();
+    $(this).parent().data('row-color', newRowColor);
+    const inputElement = $(`#input-${rowId}`);
+    inputElement.css('background-color', newRowColor);
   
+    setContrastingTextColor(inputElement, newRowColor);
+  
+    const cards = $('.card').filter(function() {
+      return $(this).data('row-id') === rowId;
+    });
+  
+    cards.css('background-color', newRowColor);
+  
+    cards.each(function() {
+      setContrastingTextColor($(this), newRowColor);
+    });
+  });
+  
+
+  function addNewRow() {
+    const newRowId = Date.now();
+    const newRowColor = randomPastelColor($('.row').length);
+    const newRow = createNewRow(newRowId, newRowColor);
+ 
     $('.rows-container').append(newRow);
+    $(`#input-${newRowId}`).focus();
+
   }
+ 
   
   // Add a card to the grid with custom text
 // Replace the existing event handler for '.add-card' click in script.js
 $('body').on('click', '.add-card', function() {
-    const inputId = $(this).data('input-id');
-    const rowId = $(this).parent().data('row-id');
-    const cardText = $(`#${inputId}`).val() || 'Empty';
-    const cardColor = $(this).parent().data('row-color');
-  
-    // Find the first empty cell
-    const firstEmptyCell = $('.grid-cell:not(:has(.card))').first();
-  
-    if (firstEmptyCell.length) {
-      const cardId = Date.now();
-      firstEmptyCell.append(`<div class="card" data-card-id="${cardId}" data-row-id="${rowId}" style="background-color: ${cardColor};">${cardText}</div>`);
-      makeCardsDraggable();
-      updateCardCount(inputId); // Move this line to after appending the card
-    } else {
-      alert('No empty cells available.');
-    }
-  });
+  const inputId = $(this).data('input-id');
+  const difference = updateCardCount(inputId);
+
+  if (difference <= 0) {
+    return;
+  }
+
+  const rowId = $(this).parent().data('row-id');
+  const cardText = $(`#${inputId}`).val() || 'Empty';
+  const cardColor = $(this).parent().data('row-color');
+
+  // Find the first empty cell
+  const firstEmptyCell = $('.grid-cell:not(:has(.card))').first();
+
+  if (firstEmptyCell.length) {
+    const cardId = Date.now();
+    const newCard = createCard(cardText, cardId, rowId, cardColor);
+    firstEmptyCell.append(newCard);
+    makeCardsDraggable();
+    updateCardCount(inputId);
+  } else {
+    alert('No empty cells available.');
+  }
+});
+
 
   $('body').on('click', '#add-grid-row', function() {
     const newRow = $('<div class="grid-row"></div>');
@@ -107,7 +130,14 @@ $('body').on('click', '.add-card', function() {
     }
   });
 
+$('body').on('input', '.small-number-input', function() {
+  const numberInputId = $(this).attr('id');
+  const inputId = `input-${numberInputId.split('-')[2]}`;
+  updateCardCount(inputId);
+});
 
+// Add this event handler in script.js for updating the row color when the "Change Color" button is clicked
+// Add this event handler in script.js for updating the row color when the color picker's value changes
   addNewRow(); // Call the function to add a new row on app start
 
   $('#add-row').on('click', function() {
@@ -118,6 +148,32 @@ $('body').on('click', '.add-card', function() {
     shiftCardsToLeft();
   });
 });
+
+function createCard(cardText, cardId, rowId, cardColor) {
+  const newCard = $(`
+    <div class="card" data-card-id="${cardId}" data-row-id="${rowId}" data-input-id="input-${rowId}" style="background-color: ${cardColor};">
+      ${cardText}
+    </div>
+  `);
+  setContrastingTextColor(newCard, cardColor);
+  return newCard;
+}
+
+function createNewRow(newRowId, newRowColor, courseName = "", newRowNumber = 0) {
+  const newRow = `
+    <div class="row" data-row-id="${newRowId}" data-row-color="${newRowColor}">
+      <span class="card-count" data-count-for="input-${newRowId}">0</span>/
+      <input type="number" id="number-input-${newRowId}" class="small-number-input" value=${newRowNumber} min="0" step="1">
+      <input type="text" id="input-${newRowId}" class="text-input" value="${courseName}" placeholder="Enter Name..." style="background-color: ${newRowColor};">
+      <input type="color" class="color-picker" data-row-id="${newRowId}" value="${newRowColor}">
+      <button class="add-card" data-input-id="input-${newRowId}">+</button>
+    </div>`;
+
+  setContrastingTextColor($(`#input-${newRowId}`), newRowColor);
+
+  return newRow;
+}
+
 
 // Add this function to script.js
 function shiftCardsToLeft() {
@@ -148,23 +204,43 @@ function shiftCardsToLeft() {
 
 
   // Add this function to script.js to update the card count
-  function updateCardCount(inputId) {
+// Update the card count function to show the difference between the entered number and the card count
+function updateCardCount(inputId) {
+  const rowId = $(`#${inputId}`).parent().data('row-id');
+  const cardCount = $('.card').filter(function() {
+    return $(this).data('row-id') === rowId;
+  }).length;
 
-    const rowId = $(`#${inputId}`).parent().data('row-id');
-    const cardCount = $('.card').filter(function() {
-      return $(this).data('row-id') === rowId;
-    }).length;
-    $(`.card-count[data-count-for="${inputId}"]`).text(cardCount);
+  const numberInputId = `number-input-${inputId.split('-')[1]}`;
+  const enteredNumber = parseInt($(`#${numberInputId}`).val()) || 0;
+  const difference = enteredNumber - cardCount;
+
+  const cardCountElement = $(`.card-count[data-count-for="${inputId}"]`);
+  cardCountElement.text(difference);
+
+  // Set the color to red if the difference is positive, otherwise set it to the default color
+  const addButton = $(`.add-card[data-input-id="${inputId}"]`);
+  console.log("diff", difference)
+  if (difference > 0) {
+    addButton.prop('disabled', false);
+    cardCountElement.css('color', 'red');
+  } else {
+    addButton.prop('disabled', true);
+    cardCountElement.css('color', 'lime'); // Set the color to an empty string to use the default color
   }
+  return difference;
+}
+
   
   // Add this event handler in script.js for updating card count when a card is added
   $('body').on('click', '.add-card', function() {
     const inputId = $(this).data('input-id');
     updateCardCount(inputId);
+
   });
   
   // Add this event handler in script.js for renaming cards when the text field value changes
-  $('body').on('input', 'input', function() {
+$('body').on('input', '.text-input', function() {
     const inputId = $(this).attr('id');
     const rowId = $(this).parent().data('row-id');
     const newCardText = $(this).val();
@@ -174,20 +250,20 @@ function shiftCardsToLeft() {
     }).text(newCardText);
   
     updateCardCount(inputId);
-  });
 
-  // Add this event handler to script.js
-  $('body').on('dblclick', '.card', function() {
-    const cardId = $(this).attr('data-card-id');
-    const rowId = $(this).attr('data-row-id');
-    const countElement = $(`.card-count[data-count-for="input-${rowId}"]`);
-    const currentCount = parseInt(countElement.text());
-    // Update the count
-    countElement.text(currentCount - 1);
-  
-    // Remove the card
-    $(this).remove();
   });
+// Add this event handler to script.js
+$('body').on('dblclick', '.card', function() {
+  const cardId = $(this).attr('data-card-id');
+  const rowId = $(this).attr('data-row-id');
+  const inputId = `input-${rowId}`;
+
+  // Remove the card
+  $(this).remove();
+
+  // Update the count
+  updateCardCount(inputId);
+});
     
   
   // Update the makeCardsDraggable function in script.js to refresh card counts when a card is dropped
@@ -231,20 +307,54 @@ function shiftCardsToLeft() {
 
   
 
-  // Add this function to script.js
-function randomPastelColor(index) {
-    const hue = Math.floor(Math.random() * 360);
-    const pastelColor = `hsl(${index * 80}, 80%, 90%)`;
-    return pastelColor;
+  function randomPastelColor(index) {
+    const hue = index * 137.508; // Use golden angle approximation
+    const saturation = 60;
+    const lightness = 85;
+  
+    return hslToHex(hue, saturation, lightness);
   }
+  
+  function hslToHex(h, s, l) {
+    l /= 100;
+    s /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+  
+  function setContrastingTextColor(element, backgroundColor) {
+    const r = parseInt(backgroundColor.slice(1, 3), 16);
+    const g = parseInt(backgroundColor.slice(3, 5), 16);
+    const b = parseInt(backgroundColor.slice(5, 7), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+    if (brightness > 128) {
+      element.css('color', 'black');
+    } else {
+      element.css('color', 'white');
+    }
+  }
+  
+
+
+///// save/load code
+
 
 // Add this event handler to script.js for saving the configuration to a file
 $('#save-to-file').on('click', function() {
+  saveStateToLocalStorage()
+  /*
   const rowsData = $('.row').map(function() {
     const rowId = $(this).attr('data-row-id');
     const rowColor = $(this).attr('data-row-color');
     const inputText = $(`#input-${rowId}`).val();
-    return { rowId, rowColor, inputText };
+    const numberInputValue = $(`#number-input-${rowId}`).val(); 
+    return { rowId, rowColor, inputText, numberInputValue }; 
   }).toArray();
 
   const cardsData = $('.card').map(function() {
@@ -269,6 +379,8 @@ $('#save-to-file').on('click', function() {
   const configuration = { rowsData, cardsData, labelCellData };
   const configurationString = JSON.stringify(configuration);
   const configurationBlob = new Blob([configurationString], { type: 'application/octet-stream' });
+  localStorage.setItem('scheduleConfiguration', configurationString);
+
 
   // Create a temporary link and trigger a download
   const link = document.createElement('a');
@@ -278,13 +390,16 @@ $('#save-to-file').on('click', function() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  */
 });
 
 
 
 $('#load-from-file').on('click', function() {
-  $('#load-file-input').click();
+ // $('#load-file-input').click();
+ loadStateFromLocalStorage()
 });
+
 $('#load-file-input').on('change', function(event) {
   const file = event.target.files[0];
 
@@ -313,36 +428,27 @@ $('#load-file-input').on('change', function(event) {
 
         // Load rows
         for (const rowData of rowsData) {
-          const labelCellValue = $(`.teacher-label-cell[teacher-data-cell-id="${rowData.rowId}"]`).val();
-          const labelCell = $(`<input type="text" class="control-label-cell" teacher-data-cell-id="${rowData.rowId}" value="${labelCellValue}">`);
-          const row = $('<div>', {class: 'row', 'data-row-id': rowData.rowId, 'data-row-color': rowData.rowColor}).append(
-            $('<input>', {type: 'text', id: `input-${rowData.rowId}`, value: rowData.inputText, style: `background-color: ${rowData.rowColor};`}),
-            $('<button>', {class: 'add-card', 'data-input-id': `input-${rowData.rowId}`, text: 'Add Card'}),
-            $('<span>', {class: 'card-count', 'data-count-for-input': `input-${rowData.rowId}`, text: '0'})
-            );
-          $('.rows-container').append(row);
+          const newRow = createNewRow(rowData.rowId, rowData.rowColor, rowData.inputText, rowData.numberInputValue);
+          $('.rows-container').append(newRow);
         }
+
 
         // Load cards
         for (const cardData of cardsData) {
-          const rowColor = $(`.row[data-row-id="${cardData.rowId}"]`).attr('data-row-color');
+          const rowColor = $(`.row[data-row-id="${cardData.rowId}"]`).data('row-color');
           const newCard = $(`
             <div class="card" data-card-id="${cardData.cardId}" data-row-id="${cardData.rowId}" style="background-color: ${rowColor};">
               ${cardData.cardText}
             </div>
           `);
+          setContrastingTextColor(newCard, rowColor);
 
           // Use cellPosition property to append the card to the correct grid cell
           $('.grid-cell[data-cell-id="' + cardData.cellPosition + '"]').append(newCard);
 
           // Update control side counts
-          $('.row[data-row-id="' + cardData.rowId + '"] .count').text(function() {
-            const currentCount = parseInt($(this).text());
-            return currentCount + 1;
-          });
+          updateCardCount(`input-${cardData.rowId}`);
         }
-
-
 
         makeCardsDraggable()
         initializeDroppableGridCells()
@@ -355,3 +461,98 @@ $('#load-file-input').on('change', function(event) {
   }
 });
 
+function saveStateToLocalStorage() {
+  const rowsData = [];
+  const cardsData = [];
+  const labelCellData = [];
+
+  $('.row').each(function() {
+    const rowData = {
+      rowId: $(this).data('row-id'),
+      rowColor: $(this).data('row-color'),
+      inputText: $(this).find('.text-input').val(),
+      numberInputValue: $(this).find('.small-number-input').val()
+    };
+    rowsData.push(rowData);
+  });
+
+  $('.card').each(function() {
+    const cardData = {
+      cardId: $(this).data('card-id'),
+      rowId: $(this).data('row-id'),
+      cardText: $(this).text(),
+      cellPosition: $(this).parent().data('cell-id')
+    };
+    cardsData.push(cardData);
+  });
+
+  $('.teacher-label-cell').each(function() {
+    const labelCellDatum = {
+      cellId: $(this).attr('teacher-data-cell-id'),
+      cellValue: $(this).val()
+    };
+    labelCellData.push(labelCellDatum);
+  });
+
+  const configuration = {
+    rowsData: rowsData,
+    cardsData: cardsData,
+    labelCellData: labelCellData
+  };
+
+  localStorage.setItem('savedState', JSON.stringify(configuration));
+}
+
+
+function loadStateFromLocalStorage() {
+  const configurationString = localStorage.getItem('savedState');
+
+  if (configurationString) {
+    try {
+      const configuration = JSON.parse(configurationString);
+      const { rowsData, cardsData, labelCellData } = configuration;
+
+      // Remove existing rows and cards
+      $('.row').remove();
+      $('.card').remove();
+
+      // Update label cells
+      for (const labelCellDatum of labelCellData) {
+        const labelCell = $(`.teacher-label-cell[teacher-data-cell-id="${labelCellDatum.cellId}"], .control-label-cell[teacher-data-cell-id="${labelCellDatum.cellId}"]`);
+        if (labelCell.length) {
+          labelCell.val(labelCellDatum.cellValue);
+        } else {
+          const newLabelCell = $(`<input type="text" class="teacher-label-cell" teacher-data-cell-id="${labelCellDatum.cellId}" value="${labelCellDatum.cellValue}">`);
+          $('.grid-labels').append(newLabelCell);
+        }
+      }
+
+      // Load rows
+      for (const rowData of rowsData) {
+        console.log(rowData)
+        const newRow = createNewRow(rowData.rowId, rowData.rowColor, rowData.inputText, rowData.numberInputValue);
+        $('.rows-container').append(newRow);
+      }
+
+    // Load cards
+    for (const cardData of cardsData) {
+      const rowColor = $(`.row[data-row-id="${cardData.rowId}"]`).data('row-color');
+      const newCard = createCard(cardData.cardText, cardData.cardId, cardData.rowId, rowColor);
+
+      // Use cellPosition property to append the card to the correct grid cell
+      $('.grid-cell[data-cell-id="' + cardData.cellPosition + '"]').append(newCard);
+
+      // Update control side counts
+      const inputId = newCard.data('input-id');
+      updateCardCount(inputId);
+    }
+            
+    
+      makeCardsDraggable();
+      initializeDroppableGridCells();
+    } catch (error) {
+      console.error(error);
+      alert(`Error loading configuration: ${error.message}`);
+    }
+  }
+}    
