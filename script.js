@@ -5,16 +5,22 @@ $(document).ready(function() {
     const colCount = 6;
     for (let i = 0; i < rowCount; i++) {
         const gridRow = $('<div class="grid-row"></div>');
+        const uniqueCardCount = $(`<span class="unique-card-count" data-row-id="${i}">0</span>`);
+
         $('.grid-container').append(gridRow);
       
-        const labelCell = $(`<input type="text" class="teacher-label-cell" teacher-data-cell-id="${i}">`);
-        gridRow.append(labelCell);
+        const teacherLabelCell = $(`<input type="text" class="teacher-label-cell" teacher-data-cell-id="${i}">`);
       
+        gridRow.append(teacherLabelCell);
+        gridRow.append(uniqueCardCount);
+
         for (let j = 0; j < colCount; j++) {
           const gridCell = $(`<div class="grid-cell" data-cell-id="${i*colCount+j}"></div>`);
           gridRow.append(gridCell);
         }
       }
+      updateUniqueCardCount()
+
   
   
     // Make cards draggable and handle the drop
@@ -42,6 +48,7 @@ $(document).ready(function() {
           }
   
           targetCell.append(droppedCard);
+          updateUniqueCardCount() 
           droppedCard.css({top: 0, left: 0});
         }
       });
@@ -86,11 +93,13 @@ $('body').on('click', '.add-card', function() {
   const difference = updateCardCount(inputId);
 
   if (difference <= 0) {
-    return;
+    return
+    const numberInputId = `number-input-${inputId.split('-')[1]}`;
+    const enteredNumber = parseInt($(`#${numberInputId}`).val()) || 0;
+    $(`#${numberInputId}`).val(enteredNumber + 1);
   }
-
   const rowId = $(this).parent().data('row-id');
-  const cardText = $(`#${inputId}`).val() || 'Empty';
+  const cardText = $(`#${inputId}`).val() || 'Unnamed';
   const cardColor = $(this).parent().data('row-color');
 
   // Find the first empty cell
@@ -133,8 +142,31 @@ $('body').on('click', '.add-card', function() {
 $('body').on('input', '.small-number-input', function() {
   const numberInputId = $(this).attr('id');
   const inputId = `input-${numberInputId.split('-')[2]}`;
-  updateCardCount(inputId);
 });
+
+$('body').on('change', '.small-number-input', function() {
+  const numberInputId = $(this).attr('id');
+  const inputId = `input-${numberInputId.split('-')[2]}`;
+  const addButton = $(`.add-card[data-input-id="${inputId}"]`);
+
+  // Get the previous value, which is stored in the data attribute.
+  const prevValue = parseInt($(this).data('prevValue'), 10) || 0;
+
+  // Get the current value from the input field.
+  const currentValue = parseInt($(this).val(), 10) || 0;
+
+  // Compare the current value to the previous value.
+  if (currentValue > prevValue) {
+    addButton.click();
+  } else {
+    updateCardCount(inputId)
+  }
+
+  // Update the previous value.
+  $(this).data('prevValue', currentValue);
+});
+
+
 
 // Add this event handler in script.js for updating the row color when the "Change Color" button is clicked
 // Add this event handler in script.js for updating the row color when the color picker's value changes
@@ -151,7 +183,7 @@ $('body').on('input', '.small-number-input', function() {
 
 function createCard(cardText, cardId, rowId, cardColor) {
   const newCard = $(`
-    <div class="card" data-card-id="${cardId}" data-row-id="${rowId}" data-input-id="input-${rowId}" style="background-color: ${cardColor};">
+    <div class="card scale-down" data-card-id="${cardId}" data-row-id="${rowId}" data-input-id="input-${rowId}" style="background-color: ${cardColor};">
       ${cardText}
     </div>
   `);
@@ -162,18 +194,17 @@ function createCard(cardText, cardId, rowId, cardColor) {
 function createNewRow(newRowId, newRowColor, courseName = "", newRowNumber = 0) {
   const newRow = `
     <div class="row" data-row-id="${newRowId}" data-row-color="${newRowColor}">
-      <span class="card-count" data-count-for="input-${newRowId}">0</span>/
+    <button class="add-card" data-input-id="input-${newRowId}" style="visibility: hidden;">0</button>
+    <span class="card-count" data-count-for="input-${newRowId}">0</span>
       <input type="number" id="number-input-${newRowId}" class="small-number-input" value=${newRowNumber} min="0" step="1">
       <input type="text" id="input-${newRowId}" class="text-input" value="${courseName}" placeholder="Enter Name..." style="background-color: ${newRowColor};">
       <input type="color" class="color-picker" data-row-id="${newRowId}" value="${newRowColor}">
-      <button class="add-card" data-input-id="input-${newRowId}">+</button>
     </div>`;
 
   setContrastingTextColor($(`#input-${newRowId}`), newRowColor);
 
   return newRow;
 }
-
 
 // Add this function to script.js
 function shiftCardsToLeft() {
@@ -201,9 +232,6 @@ function shiftCardsToLeft() {
   });
 }
 
-
-
-  // Add this function to script.js to update the card count
 // Update the card count function to show the difference between the entered number and the card count
 function updateCardCount(inputId) {
   const rowId = $(`#${inputId}`).parent().data('row-id');
@@ -212,23 +240,45 @@ function updateCardCount(inputId) {
   }).length;
 
   const numberInputId = `number-input-${inputId.split('-')[1]}`;
+  $(`#${numberInputId}`).attr('min', cardCount);
+
   const enteredNumber = parseInt($(`#${numberInputId}`).val()) || 0;
   const difference = enteredNumber - cardCount;
 
   const cardCountElement = $(`.card-count[data-count-for="${inputId}"]`);
-  cardCountElement.text(difference);
+  cardCountElement.text(cardCount);
 
   // Set the color to red if the difference is positive, otherwise set it to the default color
   const addButton = $(`.add-card[data-input-id="${inputId}"]`);
+  addButton.text(difference)
   console.log("diff", difference)
   if (difference > 0) {
-    addButton.prop('disabled', false);
-    cardCountElement.css('color', 'red');
+    addButton.css('visibility', 'visible'); // Set the color to an empty string to use the default color
   } else {
-    addButton.prop('disabled', true);
-    cardCountElement.css('color', 'lime'); // Set the color to an empty string to use the default color
-  }
+    addButton.css('visibility', 'hidden'); // Set the color to an empty string to use the default color
+  } 
+  updateUniqueCardCount()
   return difference;
+}
+
+function updateUniqueCardCount() {
+  $('.grid-row').each(function(index, row) {
+    const rowId = index;
+    const uniqueCardIds = new Set();
+    $(row).find('.card').each(function() {
+      const cardId = $(this).data('input-id');
+      uniqueCardIds.add(cardId);
+    });
+    const uniqueCountElement = $(`.unique-card-count[data-row-id="${rowId-1}"]`);
+    if(uniqueCardIds.size > 0)
+    console.log("ucs", uniqueCardIds.size, rowId, uniqueCountElement)
+    uniqueCountElement.text(uniqueCardIds.size);
+    if (uniqueCardIds.size == 0) {
+      uniqueCountElement.css('color', 'white');
+    } else {
+      uniqueCountElement.css('color', 'black'); // Set the color to an empty string to use the default color
+    } 
+  });
 }
 
   
@@ -265,6 +315,9 @@ $('body').on('dblclick', '.card', function() {
   updateCardCount(inputId);
 });
     
+// ____________________________________
+
+
   
   // Update the makeCardsDraggable function in script.js to refresh card counts when a card is dropped
   function makeCardsDraggable() {
@@ -435,14 +488,8 @@ $('#load-file-input').on('change', function(event) {
 
         // Load cards
         for (const cardData of cardsData) {
-          const rowColor = $(`.row[data-row-id="${cardData.rowId}"]`).data('row-color');
-          const newCard = $(`
-            <div class="card" data-card-id="${cardData.cardId}" data-row-id="${cardData.rowId}" style="background-color: ${rowColor};">
-              ${cardData.cardText}
-            </div>
-          `);
-          setContrastingTextColor(newCard, rowColor);
-
+          const newCard = createCard(cardData.cardText, cardData.cardId, cardData.rowId, cardData.cardColor) 
+        
           // Use cellPosition property to append the card to the correct grid cell
           $('.grid-cell[data-cell-id="' + cardData.cellPosition + '"]').append(newCard);
 
@@ -465,48 +512,62 @@ function saveStateToLocalStorage() {
   const rowsData = [];
   const cardsData = [];
   const labelCellData = [];
+  const configurationString = localStorage.getItem('savedState');
+  if (configurationString) {
+    const shouldSave = confirm('This will overwrite the previous saved schedule. Confirm?');
+    if (!shouldSave) {
+      return
+    }
+  }
+  try{
+    $('.row').each(function() {
+      const rowData = {
+        rowId: $(this).data('row-id'),
+        rowColor: $(this).data('row-color'),
+        inputText: $(this).find('.text-input').val(),
+        numberInputValue: $(this).find('.small-number-input').val()
+      };
+      rowsData.push(rowData);
+    });
 
-  $('.row').each(function() {
-    const rowData = {
-      rowId: $(this).data('row-id'),
-      rowColor: $(this).data('row-color'),
-      inputText: $(this).find('.text-input').val(),
-      numberInputValue: $(this).find('.small-number-input').val()
+    $('.card').each(function() {
+      const cardData = {
+        cardId: $(this).data('card-id'),
+        rowId: $(this).data('row-id'),
+        cardText: $(this).text(),
+        cellPosition: $(this).parent().data('cell-id')
+      };
+      cardsData.push(cardData);
+    });
+
+    $('.teacher-label-cell').each(function() {
+      const labelCellDatum = {
+        cellId: $(this).attr('teacher-data-cell-id'),
+        cellValue: $(this).val()
+      };
+      labelCellData.push(labelCellDatum);
+    });
+
+    const configuration = {
+      rowsData: rowsData,
+      cardsData: cardsData,
+      labelCellData: labelCellData
     };
-    rowsData.push(rowData);
-  });
 
-  $('.card').each(function() {
-    const cardData = {
-      cardId: $(this).data('card-id'),
-      rowId: $(this).data('row-id'),
-      cardText: $(this).text(),
-      cellPosition: $(this).parent().data('cell-id')
-    };
-    cardsData.push(cardData);
-  });
-
-  $('.teacher-label-cell').each(function() {
-    const labelCellDatum = {
-      cellId: $(this).attr('teacher-data-cell-id'),
-      cellValue: $(this).val()
-    };
-    labelCellData.push(labelCellDatum);
-  });
-
-  const configuration = {
-    rowsData: rowsData,
-    cardsData: cardsData,
-    labelCellData: labelCellData
-  };
-
-  localStorage.setItem('savedState', JSON.stringify(configuration));
+    localStorage.setItem('savedState', JSON.stringify(configuration));
+  } catch (error) {
+    console.error(error);
+    alert(`Error saving configuration: ${error.message}`);
+  } 
 }
 
 
 function loadStateFromLocalStorage() {
   const configurationString = localStorage.getItem('savedState');
-
+  const shouldLoad = confirm('Are you sure you want to load this file? This will overwrite your current schedule.');
+  if (!shouldLoad) {
+    return
+  }
   if (configurationString) {
     try {
       const configuration = JSON.parse(configurationString);

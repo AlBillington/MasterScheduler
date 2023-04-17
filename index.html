@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid Card App</title>
+    <title>Master Sceduler</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="main-container">
     <!-- Add .app-container div to wrap .grid-container and .control-container -->
-    <h1>Master Scheduler</h1>
-    <button class="control-btn" id="save-to-file">Save Schedule</button>
-    <button class="control-btn" id="load-from-file">Load Scedule</button>
-    <button class="control-btn" id="scoot">Scoot</button>
-
+    <div class = "nav">
+        <h1>Master Scheduler v2</h1>
+        <button class="control-btn" id="save-to-file">Save Schedule</button>
+        <button class="control-btn" id="load-from-file">Load Scedule</button>
+    </div>
+    <hr>
     <div class="app-container">
     <div class="grid-labels">
         <!-- Grid cells will be generated dynamically -->
@@ -21,6 +23,7 @@
       <div class="grid-container">
         <div class="grid-row">
             <input class="label-cell-heading" value="Teacher"></input>
+            <div class="grid-cell-headinga">Preps</div>
             <div class="grid-cell-heading">1</div>
             <div class="grid-cell-heading">2</div>
             <div class="grid-cell-heading">3</div>

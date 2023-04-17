@@ -3,8 +3,10 @@
   display: grid;
   grid-template-rows: repeat(6, minmax(0, 1fr)); /* Use minmax(0, 1fr) for better responsiveness */
   grid-gap: 2px;
-  max-width: 800px;
   margin: 0 auto;
+}
+.nav {
+  text-align: center;
 }
 
 .grid-row {
@@ -25,6 +27,7 @@
   justify-content: center;
   background-color: #f0f0f0; /* Add a background color to the grid cells for better contrast */
 }
+
 
 .grid-cell-heading {
   width: 100%;
@@ -82,6 +85,7 @@
   align-items: center;
   gap: 10px;
   margin-left: 20px;
+  margin-top: 21px;
   background-color: #f0f0f0; /* Add a background color to the rows for better contrast */
   border: 1px solid #ccc; /* Add a border to the rows for better contrast */
   border-radius: 3px; /* Add some border radius to soften the corners */
@@ -100,6 +104,7 @@
 .app-container {
   width: 100%;
   display: flex;
+  align-items: flex-start;
   margin: 0 auto; /* Center the app container horizontally */
 }
 
@@ -123,8 +128,14 @@ input {
   font-size: 14px; /* Increase the input font size for better readability */
 }
 
-.card-count {
+.card-count{
   margin-left: 10px;
+  font-size: 14px; /* Increase the card count font size for better readability */
+}
+
+.unique-card-count{
+  width:75px;
+  margin-right: 10px;
   font-size: 14px; /* Increase the card count font size for better readability */
 }
 
@@ -176,3 +187,5 @@ button:hover {
   margin: 0px;
   margin-right: 5px;
 }
+
+
