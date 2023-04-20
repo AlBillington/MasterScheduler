@@ -161,6 +161,7 @@ $('body').on('change', '.small-number-input', function() {
   } else {
     updateCardCount(inputId)
   }
+  
 
   // Update the previous value.
   $(this).data('prevValue', currentValue);
@@ -258,6 +259,7 @@ function updateCardCount(inputId) {
     addButton.css('visibility', 'hidden'); // Set the color to an empty string to use the default color
   } 
   updateUniqueCardCount()
+  saveStateToLocalStorage(false)
   return difference;
 }
 
@@ -508,12 +510,12 @@ $('#load-file-input').on('change', function(event) {
   }
 });
 
-function saveStateToLocalStorage() {
+function saveStateToLocalStorage(confirm = true) {
   const rowsData = [];
   const cardsData = [];
   const labelCellData = [];
   const configurationString = localStorage.getItem('savedState');
-  if (configurationString) {
+  if (configurationString && confirm) {
     const shouldSave = confirm('This will overwrite the previous saved schedule. Confirm?');
     if (!shouldSave) {
       return
